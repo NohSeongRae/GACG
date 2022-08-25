@@ -17,5 +17,3 @@ print("----------------------------------------------------")
 print(f"numpy version: {np.__version__}")
 print("----------------------------------------------------")
 print(f"PyG version: {torch_geometric.__version__}")
-
-

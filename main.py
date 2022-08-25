@@ -12,6 +12,9 @@ import random
 import uuid
 import gc
 
+from data_loader import prepare_data
+from utils import gen_output_torch, set_seed, train, train_rlu, test, gen_model_rlu, gen_model, gen_model_mag_rlu, \
+    gen_model_mag
 
 
 def get_n_params(model):
@@ -19,13 +22,13 @@ def get_n_params(model):
     for p in list(model.parameters()):
         nn = 1
         for s in list(p.size()):
-            nn = nn*s
+            nn = nn * s
         pp += nn
     return pp
 
 
 def run(args, device):
-    checkpt_file = f"./output/{args.dataset}/" + uuid.uuid4().hex
+    checkpt_file = f"./output/{args.dataset}/" + uuid.uuid4().hex  # checkpoint
 
     for stage, epochs in enumerate(args.stages):
         if stage > 0 and args.use_rlu:
@@ -170,6 +173,7 @@ def run(args, device):
 
 
 def main(args):
+    # check GPU, cuda
     if args.gpu < 0:
         device = "cpu"
     else:
@@ -180,7 +184,7 @@ def main(args):
     for i in range(args.num_runs):
         print(f"Run {i} start training")
         set_seed(args.seed + i)
-        best_val, best_test, preds = run(args, device)
+        best_val, best_test, preds = run(args, device)  # start run()
         np.save(f"output/{args.dataset}/output_{i}.npy", preds.numpy())
         val_accs.append(best_val)
         test_accs.append(best_test)
@@ -194,7 +198,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="GMLP")
+    parser = argparse.ArgumentParser(description="ACG")
     parser.add_argument("--hidden", type=int, default=512)
     parser.add_argument("--num-hops", type=int, default=5,
                         help="number of hops")

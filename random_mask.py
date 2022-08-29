@@ -2,10 +2,10 @@ import torch
 import torch_geometric
 import numpy as np
 import math
-
+"""
 
 def random_partition(num_clusters, graph, shuffle=True):
-    """random partition"""
+    random partition
     batch_size = int(math.ceil(graph.num_nodes / num_clusters))
     perm = np.arange(0, graph.num_nodes)
     if shuffle:
@@ -25,7 +25,7 @@ def random_partition(num_clusters, graph, shuffle=True):
 
 
 def random_partition_v2(num_clusters, graph, shuffle=True, save_e=[]):
-    """random partition v2"""
+    random partition v2
     if shuffle:
         cluster_id = np.random.randint(low=0, high=num_clusters, size=graph.num_nodes)
     else:
@@ -46,3 +46,5 @@ def random_partition_v2(num_clusters, graph, shuffle=True, save_e=[]):
         for key, value in graph.edge_feat.items():
             sub_g.edge_feat[key] = graph.edge_feat[key][eids]
         yield sub_g
+        
+"""

@@ -84,14 +84,14 @@ class R_GAMLP(nn.Module):  # recursive GAMLP
         return right_1
 
 
-#main model
+# main model
 class JK_GAMLP(nn.Module):
     def __init__(self, nfeat, hidden, nclass, num_hops,
                  dropout, input_drop, att_dropout, alpha, n_layers_1, n_layers_2, act, pre_process=False,
                  residual=False, pre_dropout=False, bns=False):
         super(JK_GAMLP, self).__init__()
-        self.num_hops = num_hops #hop
-        self.prelu = nn.PReLU() #parametric ReLU
+        self.num_hops = num_hops  # hop
+        self.prelu = nn.PReLU()  # parametric ReLU
         self.pre_dropout = pre_dropout
         if pre_process:
             self.lr_jk_ref = FeedForwardNetII(
@@ -103,16 +103,16 @@ class JK_GAMLP(nn.Module):
                 [FeedForwardNet(nfeat, hidden, hidden, 2, dropout, bns) for i in range(num_hops)])
         else:
             self.lr_jk_ref = FeedForwardNetII(
-                num_hops * nfeat, hidden, hidden, n_layers_1, dropout, alpha, bns) #JK_GAMLP layer
-            self.lr_att = nn.Linear(nfeat + hidden, 1) #attention layer
+                num_hops * nfeat, hidden, hidden, n_layers_1, dropout, alpha, bns)  # JK_GAMLP layer
+            self.lr_att = nn.Linear(nfeat + hidden, 1)  # attention layer
             self.lr_output = FeedForwardNetII(
-                nfeat, hidden, nclass, n_layers_2, dropout, alpha, bns)#output layer
+                nfeat, hidden, nclass, n_layers_2, dropout, alpha, bns)  # output layer
         self.dropout = nn.Dropout(dropout)
         self.input_drop = nn.Dropout(input_drop)
         self.att_drop = nn.Dropout(att_dropout)
         self.pre_process = pre_process
         self.res_fc = nn.Linear(nfeat, hidden)
-        if act == 'sigmoid':
+        if act == 'sigmoid':  # activation selection
             self.act = torch.nn.Sigmoid()
         elif act == 'relu':
             self.act = torch.nn.ReLU()
@@ -134,7 +134,7 @@ class JK_GAMLP(nn.Module):
                 layer.reset_parameters()
 
     def forward(self, feature_list):
-        num_node = feature_list[0].shape[0] #number of node
+        num_node = feature_list[0].shape[0]  # number of node
         feature_list = [self.input_drop(feature) for feature in feature_list]
         input_list = []
         if self.pre_process:
@@ -142,7 +142,7 @@ class JK_GAMLP(nn.Module):
                 input_list.append(self.process[i](feature_list[i]))
         else:
             input_list = feature_list
-        concat_features = torch.cat(input_list, dim=1) #feature concatenation
+        concat_features = torch.cat(input_list, dim=1)  # feature concatenation
         jk_ref = self.dropout(self.prelu(self.lr_jk_ref(concat_features)))
         attention_scores = [self.act(self.lr_att(torch.cat((jk_ref, x), dim=1))).view(num_node, 1) for x in input_list]
         W = torch.cat(attention_scores, dim=1)

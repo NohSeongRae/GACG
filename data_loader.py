@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import gc
 
-"""
+
 def prepare_label_emb(args, g, labels, n_classes, train_idx, valid_idx, test_idx, label_teacher_emb=None):
     print(n_classes)
     print(labels.shape[0])
@@ -34,10 +34,9 @@ def prepare_label_emb(args, g, labels, n_classes, train_idx, valid_idx, test_idx
     res = y
     return torch.cat([res[train_idx], res[valid_idx], res[test_idx]], dim=0)
 
-"""
+
 def neighbor_average_labels(g, feat, args):
-    """
-    Compute multi-hop neighbor-averaged node features
+    # Compute multi-hop neighbor-averaged node features
 
     print("Compute neighbor-averaged labels")
     g.ndata["f"] = feat
@@ -45,11 +44,10 @@ def neighbor_average_labels(g, feat, args):
                  fn.mean("msg", "f"))
     feat = g.ndata.pop('f')
     return feat
-    """
+
 
 def neighbor_average_features(g, args):
-    """
-    Compute multi-hop neighbor-averaged node features
+    # Compute multi-hop neighbor-averaged node features
 
     print("Compute neighbor-averaged feats")
     g.ndata["feat_0"] = g.ndata["feat"]
@@ -60,26 +58,24 @@ def neighbor_average_features(g, args):
     for hop in range(args.num_hops + 1):
         res.append(g.ndata.pop(f"feat_{hop}"))
     return res
-    """
-    """
+
+
 def batched_acc(labels, pred):
     # testing accuracy for single label multi-class prediction
     return (torch.argmax(pred, dim=1) == labels,)
-    """
-    """
+
+
 def get_evaluator(dataset):
     dataset = dataset.lower()
     if dataset.startswith("oag"):
         return batched_ndcg_mrr
     else:
         return batched_acc
-    """
 
-    """
+
 def get_ogb_evaluator(dataset):
-    
-    Get evaluator from Open Graph Benchmark based on dataset
-    
+    # Get evaluator from Open Graph Benchmark based on dataset
+
     #    if dataset=='ogbn-mag':
     #        return batched_acc
     #    else:
@@ -89,12 +85,10 @@ def get_ogb_evaluator(dataset):
         "y_pred": preds.view(-1, 1),
     })["acc"]
 
-    """
-    """
+
 def load_dataset(name, device, args):
-    
-    Load dataset and move graph and features to device
-    
+    # Load dataset and move graph and features to device
+
     '''if name not in ["ogbn-products", "ogbn-arxiv","ogbn-mag"]:
         raise RuntimeError("Dataset {} is not supported".format(name))'''
     if name not in ["ogbn-products", "ogbn-mag", "ogbn-papers100M"]:
@@ -132,13 +126,10 @@ def load_dataset(name, device, args):
           f"# Classes: {n_classes}\n")
 
     return g, labels, n_classes, train_nid, val_nid, test_nid, evaluator
-    """
-"""
+
 
 def prepare_data(device, args, teacher_probs):
-    
-    Load dataset and compute neighbor-averaged node features used by SIGN model
-    
+    # Load dataset and compute neighbor-averaged node features used by SIGN model
 
     data = load_dataset(args.dataset, device, args)
 
@@ -167,14 +158,14 @@ def prepare_data(device, args, teacher_probs):
         for i in range(args.num_hops + 1):
             feats.append(torch.load(f"/data2/zwt/ogbn_papers100M/feat/papers100m_feat_{i}.pt"))
         in_feats = feats[0].shape[1]
-        '''
-        g.ndata['feat']=feat
-        feats=neighbor_average_features(g,args)
-        in_feats=feats[0].shape[1]
+
+        g.ndata['feat'] = feat
+        feats = neighbor_average_features(g, args)
+        in_feats = feats[0].shape[1]
 
         for i, x in enumerate(feats):
             feats[i] = torch.cat((x[train_nid], x[val_nid], x[test_nid]), dim=0)
-        '''
+
     else:
         for i, x in enumerate(feats):
             feats[i] = torch.cat((x[train_nid], x[val_nid], x[test_nid]), dim=0)
@@ -182,5 +173,5 @@ def prepare_data(device, args, teacher_probs):
     val_nid = val_nid.to(device)
     test_nid = test_nid.to(device)
     labels = labels.to(device).to(torch.long)
-    return feats, torch.cat([labels[train_nid], labels[val_nid], labels[test_nid]]), in_feats, n_classes, train_nid, val_nid, test_nid, evaluator, label_emb
-"""
+    return feats, torch.cat([labels[train_nid], labels[val_nid],
+                             labels[test_nid]]), in_feats, n_classes, train_nid, val_nid, test_nid, evaluator, label_emb

@@ -14,6 +14,7 @@ from model import R_GAMLP, JK_GAMLP, NARS_JK_GAMLP, NARS_R_GAMLP, R_GAMLP_RLU, J
     NARS_R_GAMLP_RLU
 
 
+#for ogb_mag dataset
 def gen_model_mag(args, num_feats, in_feats, num_classes):
     if args.method == "R_GAMLP":
         # error
@@ -40,6 +41,7 @@ def gen_model_mag_rlu(args, num_feats, in_feats, num_classes):
                                  args.pre_dropout, args.bns)
 
 
+#for general dataset
 def gen_model(args, in_size, num_classes):
     if args.method == "R_GAMLP":
         return R_GAMLP(in_size, args.hidden, num_classes, args.num_hops + 1,

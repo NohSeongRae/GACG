@@ -30,8 +30,8 @@ def get_n_params(model):
 def run(args, device):
     checkpt_file = f"./output/{args.dataset}/" + uuid.uuid4().hex  # checkpoint
 
-    for stage, epochs in enumerate(args.stages):
-        if stage > 0 and args.use_rlu:
+    for stage, epochs in enumerate(args.stages): #--stages
+        if stage > 0 and args.use_rlu: #setting teacher_probs
             predict_prob = torch.load(checkpt_file + '_{}.pt'.format(stage - 1)) / args.temp
             predict_prob = predict_prob.softmax(dim=1)
             train_node_nums = len(train_nid)
@@ -68,15 +68,16 @@ def run(args, device):
         else:
             teacher_probs = None
 
-        with torch.no_grad():
+        with torch.no_grad(): #preparing data
             data = prepare_data(device, args, teacher_probs)
         feats, labels, in_size, num_classes, \
         train_nid, val_nid, test_nid, evaluator, label_emb = data
+        #data : features, labels, input size, number of classes, train_nid, validation_nid, test_nid, evaluator, label_embedding
 
-        if stage == 0:
+        if stage == 0: #for inital train loader setting
             train_loader = torch.utils.data.DataLoader(
                 torch.arange(len(train_nid)), batch_size=args.batch_size, shuffle=True, drop_last=False)
-        else:
+        else:# train loader setting after stage 1
             train_loader = torch.utils.data.DataLoader(torch.arange(len(train_nid)), batch_size=int(
                 args.batch_size * len(train_nid) / (len(enhance_idx) + len(train_nid))), shuffle=True, drop_last=False)
         val_loader = torch.utils.data.DataLoader(
@@ -89,7 +90,7 @@ def run(args, device):
         all_loader = torch.utils.data.DataLoader(
             torch.arange(len(train_nid) + len(val_nid) + len(test_nid)), batch_size=args.batch_size,
             shuffle=False, drop_last=False)
-
+        #node numbers
         train_node_nums = len(train_nid)
         valid_node_nums = len(val_nid)
         test_node_nums = len(test_nid)
@@ -97,6 +98,7 @@ def run(args, device):
 
         # num_hops = args.num_hops + 1
 
+        #generate models (using rlu or not)
         if args.use_rlu == False:
             print("not use rlu")
             if args.dataset == "ogbn-mag":
@@ -115,6 +117,7 @@ def run(args, device):
         model = model.to(device)
         print("# Params:", get_n_params(model))
 
+        #loss function, optimizer setting
         loss_fcn = nn.CrossEntropyLoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr,
                                      weight_decay=args.weight_decay)
@@ -126,7 +129,7 @@ def run(args, device):
         count = 0
 
         for epoch in range(epochs):
-            gc.collect()
+            gc.collect() #garbage collector
             start = time.time()
             if stage == 0:
                 loss, acc = train(model, feats, labels, loss_fcn, optimizer, train_loader, label_emb, evaluator)
@@ -140,7 +143,7 @@ def run(args, device):
 
             log = "Epoch {}, Time(s): {:.4f},Train loss: {:.4f}, Train acc: {:.4f} ".format(epoch, end - start, loss,
                                                                                             acc * 100)
-            if epoch % args.eval_every == 0 and epoch > args.train_num_epochs[stage]:
+            if epoch % args.eval_every == 0 and epoch > args.train_num_epochs[stage]: #test
                 with torch.no_grad():
                     acc = test(model, feats, labels, val_loader, evaluator,
                                label_emb)
@@ -153,7 +156,7 @@ def run(args, device):
 
                     best_test = test(model, feats, labels, test_loader, evaluator,
                                      label_emb)
-                    torch.save(model.state_dict(), checkpt_file + f'_{stage}.pkl')
+                    torch.save(model.state_dict(), checkpt_file + f'_{stage}.pkl') #pickle file save
                     count = 0
                 else:
                     count = count + args.eval_every
@@ -179,11 +182,11 @@ def main(args):
     else:
         device = "cuda:{}".format(args.gpu)
 
-    val_accs = []
-    test_accs = []
-    for i in range(args.num_runs):
+    val_accs = []#validation accuracy
+    test_accs = []#test accuracy
+    for i in range(args.num_runs): #--num-runs
         print(f"Run {i} start training")
-        set_seed(args.seed + i)
+        set_seed(args.seed + i) #seed use for training
         best_val, best_test, preds = run(args, device)  # start run()
         np.save(f"output/{args.dataset}/output_{i}.npy", preds.numpy())
         val_accs.append(best_val)
@@ -199,68 +202,73 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="ACG")
-    parser.add_argument("--hidden", type=int, default=512)
+    parser.add_argument("--hidden", type=int, default=512)  # hidden layer
     parser.add_argument("--num-hops", type=int, default=5,
-                        help="number of hops")
+                        help="number of hops")  # node hop
     parser.add_argument("--label-num-hops", type=int, default=9,
-                        help="number of hops for label")
+                        help="number of hops for label")  # label hop
     parser.add_argument("--seed", type=int, default=0,
-                        help="the seed used in the training")
-    parser.add_argument("--lr", type=float, default=0.001)
-    parser.add_argument("--dataset", type=str, default="ogbn-products")
+                        help="the seed used in the training")  # random seed
+    parser.add_argument("--lr", type=float, default=0.001)  # learning rate
+    parser.add_argument("--dataset", type=str, default="semantic_building_category")  # dataset
     parser.add_argument("--dropout", type=float, default=0.5,
-                        help="dropout on activation")
-    parser.add_argument("--gpu", type=int, default=3)
-    parser.add_argument("--weight-decay", type=float, default=0)
-    parser.add_argument("--eval-every", type=int, default=1)
-    parser.add_argument("--batch-size", type=int, default=10000)
+                        help="dropout on activation")  # drop out rate
+    parser.add_argument("--gpu", type=int, default=3)  # using gpu
+    parser.add_argument("--weight-decay", type=float, default=0)  # weight decay (regularization)
+    parser.add_argument("--eval-every", type=int, default=1)  # evaluate every epoch
+    parser.add_argument("--batch-size", type=int, default=10000)  # batch size
     parser.add_argument("--n-layers-1", type=int, default=4,
-                        help="number of feed-forward layers")
+                        help="number of feed-forward layers")  # number of feed-forward layers in 1st layer
     parser.add_argument("--n-layers-2", type=int, default=4,
-                        help="number of feed-forward layers")
+                        help="number of feed-forward layers")  # number of feed-forward layers in 2nd layer
     parser.add_argument("--n-layers-3", type=int, default=4,
-                        help="number of feed-forward layers")
+                        help="number of feed-forward layers")  # number of feed-forward layers in 3rd layer
     parser.add_argument("--num-runs", type=int, default=10,
-                        help="number of times to repeat the experiment")
+                        help="number of times to repeat the experiment")  # total experiment repeat
     parser.add_argument("--patience", type=int, default=100,
-                        help="early stop of times of the experiment")
+                        help="early stop of times of the experiment")  # early stop
     parser.add_argument("--alpha", type=float, default=0.5,
-                        help="initial residual parameter for the model")
+                        help="initial residual parameter for the model")  # resnet parameter initial setting
     parser.add_argument("--temp", type=float, default=1,
                         help="temperature of the output prediction")
+    """
+    temperature is a hyperparameter which is applied to logits to affect the final probabilities from the softmax
+    low temperature : makes model more confident -> probabilities become further
+    high temperature : makes model less confident -> probabilities become closer
+    """
     parser.add_argument("--threshold", type=float, default=0.8,
                         help="the threshold for the node to be added into the model")
     parser.add_argument("--input-drop", type=float, default=0,
-                        help="input dropout of input features")
+                        help="input dropout of input features")  # input feature drop out
     parser.add_argument("--att-drop", type=float, default=0.5,
-                        help="attention dropout of model")
+                        help="attention dropout of model")  # attention drop out
     parser.add_argument("--label-drop", type=float, default=0.5,
-                        help="label feature dropout of model")
+                        help="label feature dropout of model")  # label drop out
     parser.add_argument("--gama", type=float, default=0.5,
-                        help="parameter for the KL loss")
+                        help="parameter for the KL loss")  # KL loss parameter
     parser.add_argument("--pre-process", action='store_true', default=False,
-                        help="whether to process the input features")
+                        help="whether to process the input features")  # input feature process boolean
     parser.add_argument("--residual", action='store_true', default=False,
-                        help="whether to connect the input features")
+                        help="whether to connect the input features")  # resnet for input feature
     parser.add_argument("--act", type=str, default="relu",
-                        help="the activation function of the model")
+                        help="the activation function of the model")  # activation function
     parser.add_argument("--method", type=str, default="JK_GAMLP",
-                        help="the model to use")
-    parser.add_argument("--use-emb", type=str)
-    parser.add_argument("--root", type=str, default='/data4/zwt/')
-    parser.add_argument("--emb_path", type=str, default='/data4/zwt/NARS-main')
+                        help="the model to use")  # choose model
+    parser.add_argument("--use-emb", type=str)  # using embedding
+    parser.add_argument("--root", type=str, default='/data4/zwt/')  # root dir
+    parser.add_argument("--emb_path", type=str, default='/data4/zwt/NARS-main')  # embedding path
     parser.add_argument("--use-relation-subsets", type=str,
-                        default='/data4/zwt/NARS-main/sample_relation_subsets/examples/mag')
+                        default='/data4/zwt/NARS-main/sample_relation_subsets/examples/mag')  # relation subset dir
     parser.add_argument("--use-rlu", action='store_true', default=False,
-                        help="whether to use the reliable data distillation")
+                        help="whether to use the reliable data distillation")  # using relative LU (RLU)
     parser.add_argument("--train-num-epochs", nargs='+', type=int, default=[100, 100],
-                        help="The Train epoch setting for each stage.")
+                        help="The Train epoch setting for each stage.")  # train epoch
     parser.add_argument("--stages", nargs='+', type=int, default=[300, 300],
-                        help="The epoch setting for each stage.")
+                        help="The epoch setting for each stage.")  # epoch
     parser.add_argument("--pre-dropout", action='store_true', default=False,
-                        help="whether to process the input features")
+                        help="whether to process the input features")  # pre dropout
     parser.add_argument("--bns", action='store_true', default=False,
-                        help="whether to process the input features")
+                        help="whether to process the input features")  # using batch normalization for input feature
 
     args = parser.parse_args()
     print(args)

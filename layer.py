@@ -99,7 +99,7 @@ class FeedForwardNet(nn.Module):
                     x = self.dropout(self.prelu(x))
         return x
 
-
+#layer in JK_GAMLP
 class FeedForwardNetII(nn.Module):
     def __init__(self, in_feats, hidden, out_feats, n_layers, dropout, alpha, bns=False):
         super(FeedForwardNetII, self).__init__()
@@ -113,7 +113,7 @@ class FeedForwardNetII(nn.Module):
         else:
             self.layers.append(Dense(in_feats, hidden))
             for i in range(n_layers - 2):
-                self.layers.append(GraphConvolution(hidden, hidden, alpha, bns))
+                self.layers.append(GraphConvolution(hidden, hidden, alpha, bns)) #graph convolution
             self.layers.append(Dense(hidden, out_feats))
 
         self.prelu = nn.PReLU()

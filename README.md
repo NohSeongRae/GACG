@@ -1,3 +1,3 @@
 # ACG
-City Generator using builiding semantics/n
+City Generator using builiding semantics  
 based on graph neural network

@@ -1,8 +1,8 @@
-# the entire file is apdated from https://github.com/facebookresearch/NARS/blob/main/data.py
 import os
 import numpy as np
 import torch
-import torch_geometric
+import dgl
+import dgl.function as fn
 
 
 ###############################################################################
@@ -66,9 +66,9 @@ def gen_rel_subset_feature(g, rel_subset, args, device):
         ntype2feat = {}
         for etype in new_g.etypes:
             stype, _, dtype = new_g.to_canonical_etype(etype)
-            new_g[etype].update_all(fn.copy_u(f'hop_{hop - 1}', 'm'), fn.sum('m', 'new_feat'))
+            new_g[etype].update_all(fn.copy_u(f'hop_{hop-1}', 'm'), fn.sum('m', 'new_feat'))
             new_feat = new_g.nodes[dtype].data.pop("new_feat")
-            assert ("new_feat" not in new_g.nodes[stype].data)
+            assert("new_feat" not in new_g.nodes[stype].data)
             if dtype in ntype2feat:
                 ntype2feat[dtype] += new_feat
             else:
@@ -76,7 +76,7 @@ def gen_rel_subset_feature(g, rel_subset, args, device):
         for ntype in new_g.ntypes:
             assert ntype in ntype2feat  # because subgraph is not directional
             feat_dict = new_g.nodes[ntype].data
-            old_feat = feat_dict.pop(f"hop_{hop - 1}")
+            old_feat = feat_dict.pop(f"hop_{hop-1}")
             if ntype == "paper":
                 res.append(old_feat.cpu())
             feat_dict[f"hop_{hop}"] = ntype2feat.pop(ntype).mul_(feat_dict["norm"])
@@ -131,6 +131,7 @@ def load_mag(device, args):
     n_classes = int(labels.max() - labels.min()) + 1
 
     return g, labels, n_classes, train_nid, val_nid, test_nid
+
 
 
 def preprocess_features(g, rel_subsets, args, device):

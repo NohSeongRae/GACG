@@ -1,2 +1,2 @@
-# Graph Attention Based City Generator
+# Graph Attention City Generator
 

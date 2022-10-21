@@ -8,7 +8,7 @@ import dgl.function as fn
 from dgl.nn.pytorch.conv import GATConv
 import args
 
-
+#out encoder
 class GCN(nn.Module):
     def __init__(self, in_feat, out_feat, num_classes, num_heads):
         super(GCN, self).__init__()

@@ -44,7 +44,7 @@ class OrlendoDataset(DGLDataset):
         self.graph.ndata['label'] = node_labels
         self.graph.edata['weight'] = edge_features
 
-        # If your dataset is a node classification dataset, you will need to assign
+        # If your graph_dataset is a node classification graph_dataset, you will need to assign
         # masks indicating whether a node belongs to training, validation, and test set.
         n_nodes = nodes_data.shape[0]
         n_train = int(n_nodes * 0.6)
@@ -71,14 +71,14 @@ class OrlendoDataset(DGLDataset):
 
 dataset = OrlendoDataset()
 graph = dataset[0]
-print("len of dataset: ", len(dataset))
+print("len of graph_dataset: ", len(dataset))
 print(graph)
 nC={'num_classes': 10}
 file_name='orlendo_test'
 
-graph_path=os.path.join('./dataset',  file_name +'_dgl_graph.bin')
+graph_path=os.path.join('./graph_dataset',  file_name +'_dgl_graph.bin')
 save_graphs(graph_path, graph, {'labels':node_labels })
-info_path = os.path.join('./dataset', file_name + '_info.pkl')
+info_path = os.path.join('./graph_dataset', file_name + '_info.pkl')
 save_info(info_path, {'num_classes': nC})
 def save(self):
     graph_path = os.path.join(self.save_path, self.mode + '_dgl_graph.bin')

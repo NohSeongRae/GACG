@@ -38,23 +38,36 @@ def train(g, model):
     train_mask = g.ndata['train_mask']
     val_mask = g.ndata['val_mask']
     test_mask = g.ndata['test_mask']
-    for e in range(100):
+    for e in range(1000):
         # Forward
         logits = model(g, features)
 
         # Compute prediction
         logp = F.log_softmax(logits, 1)
+        pred=logits.argmax(1)
         loss = F.nll_loss(logp[train_mask], labels[train_mask])
+
+        train_acc = (pred[train_mask] == labels[train_mask]).float().mean()
+        val_acc = (pred[val_mask] == labels[val_mask]).float().mean()
+        test_acc = (pred[test_mask] == labels[test_mask]).float().mean()
+
+        if best_val_acc < val_acc:
+            best_val_acc = val_acc
+            best_test_acc = test_acc
+
         # Backward
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
         if e % 5 == 0:
-            print("Epoch {:05d} | Loss {:.4f} ".format(
-                e, loss.item()))
+            print('In epoch {}, loss: {:.3f}, val acc: {:.3f} (best {:.3f}), test acc: {:.3f} (best {:.3f})'.format(
+                e, loss, val_acc, best_val_acc, test_acc, best_test_acc))
+
 
 
 g = g.to('cuda')
 model = GCN(g.ndata['feat'].shape[1], 16, dataset.num_classes, 3).to('cuda')
 train(g, model)
+
+

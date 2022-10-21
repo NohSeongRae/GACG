@@ -5,8 +5,26 @@ import numpy as np
 import os
 import dgl
 import dgl.function as fn
-from dgl.nn.pytorch.conv import EGATConv
+from dgl.nn.pytorch.conv import GATConv
 import args
+
+
+class GCN(nn.Module):
+    def __init__(self, in_feat, out_feat, num_classes, num_heads):
+        super(GCN, self).__init__()
+        self.conv1 = GATConv(in_feat, out_feat, num_heads)
+        self.conv2 = GATConv(out_feat*num_heads, num_classes, 1,)
+
+    def forward(self, g, in_feat):
+        h = self.conv1(g, in_feat)
+        h = h.view(-1, h.size(1) * h.size(2))  # (in_feat, num_heads, out_dim) -> (in_feat, num_heads * out_dim)
+        # WHAT?
+        h = F.elu(h)
+        h = self.conv2(g, h)
+        h = h.squeeze()  # (in_feat, 1, out_dim) -> (in_feat, out_dim)
+        return h
+
+
 
 class VGAE(nn.Module):
     def __init__(self, adj):
@@ -29,6 +47,7 @@ class VGAE(nn.Module):
         return A_pred
 
 
+
 class GraphConvSparse(nn.Module):
     def __init__(self, input_dim, output_dim, adj, activation=F.relu, **kwargs):
         super(GraphConvSparse, self).__init__(**kwargs)
@@ -42,6 +61,7 @@ class GraphConvSparse(nn.Module):
         x = torch.mm(self.adj, x)
         outputs = self.activation(x)
         return outputs
+
 
 
 def dot_product_decode(Z):

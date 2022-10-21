@@ -4,23 +4,23 @@ from dgl.data import DGLDataset
 import torch
 import os
 
-members = pd.read_csv('./SCG_Dataset/OSMNode/LasVegas.csv', low_memory=False, encoding='cp949')  # low_memory false due to mixed data type
-# print(members.head())  # check node csv file
+members = pd.read_csv('./SCG_Dataset/OSMNode/Node_Orlando.csv', low_memory=False, encoding='cp949')  # low_memory=false due to mixed data type
+print(members.head())  # check node csv file
 
-interactions = pd.read_csv('./SCG_Dataset/OSMEdge/Edge_LasVegas.csv', low_memory=False, encoding='cp949')
-# print(interactions.head())  # check edge csv file
+interactions = pd.read_csv('./SCG_Dataset/OSMEdge/Edge_Orlando.csv', low_memory=False, encoding='cp949')
+print(interactions.head())  # check edge csv file
 
 
-class HelsinkiDataset(DGLDataset):
+class OrlendoDataset(DGLDataset):
     def __init__(self):
-        super().__init__(name='Helsinki')
+        super().__init__('orlendo')
 
     def process(self):
-        nodes_data = pd.read_csv('./SCG_Dataset/OSMNode/LasVegas.csv', low_memory=False,encoding='cp949')
-        edges_data = pd.read_csv('./SCG_Dataset/OSMEdge/Edge_LasVegas.csv', low_memory=False,encoding='cp949')
-        node_features = torch.from_numpy(nodes_data['lon'].to_numpy())
+        nodes_data = pd.read_csv('./SCG_Dataset/OSMNode/Node_Orlando.csv', low_memory=False,encoding='cp949')
+        edges_data = pd.read_csv('./SCG_Dataset/OSMEdge/Edge_Orlando.csv', low_memory=False,encoding='cp949')
+        node_features = torch.from_numpy(nodes_data['lat'].to_numpy())
         # node_labels = torch.from_numpy(nodes_data['Club'].astype('category').cat.codes.to_numpy())
-        node_labels=torch.from_numpy(nodes_data['lat'].to_numpy())
+        node_labels=torch.from_numpy(nodes_data['lon'].to_numpy())
         edge_features = torch.from_numpy(edges_data['distance'].to_numpy())
         edges_src = torch.from_numpy(edges_data['src_id'].to_numpy())
         edges_dst = torch.from_numpy(edges_data['dst_id'].to_numpy())
@@ -55,7 +55,7 @@ class HelsinkiDataset(DGLDataset):
         return 1
 
 
-dataset = HelsinkiDataset()
+dataset = OrlendoDataset()
 graph = dataset[0]
 
 print(graph)

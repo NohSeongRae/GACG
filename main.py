@@ -1,12 +1,5 @@
-import torch
-import torch.nn.functional as F
-from torch.optim import Adam
-from sklearn.metrics import roc_auc_score, average_precision_score
-import scipy.sparse as sp
-import numpy as np
-import os
-import time
-
-import data_preprocess
-import args
-import model
+print("geometric graph")
+"""
+locate crossway based on semantic graph
+compute how many crossway locates to each semantic buildings
+"""
